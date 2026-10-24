@@ -1,6 +1,6 @@
 <template>
 	<private-view title="Upload & Copy Links">
-		<div ref="pageElement" class="page">
+		<div class="page">
 			<section class="intro">
 				<p class="intro-copy">
 					Upload one or more files, immediately get public links to copy and use in text, buttons, cards, and
@@ -92,14 +92,15 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useApi, useStores } from '@directus/extensions-sdk';
 
 const api = useApi();
 const { useSettingsStore } = useStores();
 const settingsStore = useSettingsStore();
 let navigationAutoCollapsed = false;
-const pageElement = ref(null);
+let navigationFrame;
+let navigationLookupAttempts = 0;
 const fileInput = ref(null);
 const uploads = ref([]);
 const isDragging = ref(false);
@@ -117,23 +118,29 @@ const dropZoneTitle = computed(() => {
 	return isUploading.value ? 'Uploading your files...' : 'Drop files here';
 });
 
-onMounted(async () => {
-	await nextTick();
-	const privateView = pageElement.value?.closest('.private-view');
-	const closeNavigation = privateView?.querySelector('.module-nav .project-info .nav-toggle');
-	if (!(closeNavigation instanceof HTMLElement)) return;
-
-	closeNavigation.click();
-	navigationAutoCollapsed = true;
+onMounted(() => {
+	collapseNavigationWhenReady();
 });
 
 onBeforeUnmount(() => {
+	window.cancelAnimationFrame(navigationFrame);
 	if (!navigationAutoCollapsed) return;
 
-	const privateView = pageElement.value?.closest('.private-view');
-	const openNavigation = privateView?.querySelector('.header-bar .nav-toggle');
+	const openNavigation = document.querySelector('.header-bar .nav-toggle');
 	if (openNavigation instanceof HTMLElement) openNavigation.click();
 });
+
+function collapseNavigationWhenReady() {
+	const closeNavigation = document.querySelector('.module-nav .project-info .nav-toggle');
+	if (closeNavigation instanceof HTMLElement) {
+		closeNavigation.click();
+		navigationAutoCollapsed = true;
+		return;
+	}
+
+	navigationLookupAttempts += 1;
+	if (navigationLookupAttempts < 120) navigationFrame = window.requestAnimationFrame(collapseNavigationWhenReady);
+}
 
 function openFilePicker() {
 	fileInput.value?.click();
