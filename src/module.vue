@@ -160,17 +160,18 @@ async function queueFiles(fileList) {
 async function uploadFile(upload) {
 	const formData = new FormData();
 	formData.append('file', upload.file, upload.name);
+	const trackedUpload = uploads.value.find((item) => item.key === upload.key);
 
 	try {
 		const response = await api.post('/files', formData);
 		const uploadedFile = response.data.data;
-		upload.url = createDownloadUrl(uploadedFile.id);
-		upload.status = 'done';
+		trackedUpload.url = createDownloadUrl(uploadedFile.id);
+		trackedUpload.status = 'done';
 	} catch (error) {
-		upload.status = 'error';
-		upload.error = error.response?.data?.errors?.[0]?.message || error.message || 'Upload failed';
+		trackedUpload.status = 'error';
+		trackedUpload.error = error.response?.data?.errors?.[0]?.message || error.message || 'Upload failed';
 	} finally {
-		delete upload.file;
+		delete trackedUpload.file;
 		activeUploads.value -= 1;
 		completedInBatch.value += 1;
 	}
