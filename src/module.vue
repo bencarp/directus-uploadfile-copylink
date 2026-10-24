@@ -2,11 +2,9 @@
 	<private-view title="Upload & Copy Links">
 		<div class="page">
 			<section class="intro">
-				<p class="eyebrow">Directus Assets</p>
-				<h1>Upload once. Share immediately.</h1>
 				<p class="intro-copy">
-					Drop one file or a whole batch. Each file is uploaded to the Directus file library and gets a
-					ready-to-copy asset link.
+					Upload one or more files, immediately get public links to copy and use in text, buttons, cards, and
+					elsewhere
 				</p>
 			</section>
 
@@ -94,12 +92,15 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { defineStore } from 'pinia';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useApi, useStores } from '@directus/extensions-sdk';
 
 const api = useApi();
 const { useSettingsStore } = useStores();
 const settingsStore = useSettingsStore();
+const useNavBarStore = defineStore('nav-bar-store', {});
+let navBarWasCollapsed;
 const fileInput = ref(null);
 const uploads = ref([]);
 const isDragging = ref(false);
@@ -115,6 +116,19 @@ const projectUrl = computed(() => settingsStore.settings?.project_url?.trim() ||
 const dropZoneTitle = computed(() => {
 	if (!projectUrl.value) return 'Project URL required';
 	return isUploading.value ? 'Uploading your files...' : 'Drop files here';
+});
+
+onMounted(() => {
+	const navBarStore = useNavBarStore();
+	if (typeof navBarStore.collapse !== 'function') return;
+
+	navBarWasCollapsed = navBarStore.collapsed;
+	navBarStore.collapse();
+});
+
+onBeforeUnmount(() => {
+	const navBarStore = useNavBarStore();
+	if (navBarWasCollapsed === false && typeof navBarStore.expand === 'function') navBarStore.expand();
 });
 
 function openFilePicker() {
@@ -252,18 +266,9 @@ function formatBytes(bytes) {
 	text-transform: uppercase;
 }
 
-.intro h1 {
-	margin: 0;
-	color: var(--module-ink);
-	font-size: clamp(34px, 5vw, 54px);
-	font-weight: 700;
-	letter-spacing: -0.045em;
-	line-height: 1.04;
-}
-
 .intro-copy {
 	max-width: 650px;
-	margin: 18px 0 0;
+	margin: 0;
 	color: var(--module-muted);
 	font-size: 17px;
 	line-height: 1.65;
