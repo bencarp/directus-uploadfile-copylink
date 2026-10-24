@@ -1,6 +1,6 @@
 <template>
 	<private-view title="Upload & Copy Links">
-		<div class="page">
+		<div ref="pageElement" class="page">
 			<section class="intro">
 				<p class="intro-copy">
 					Upload one or more files, immediately get public links to copy and use in text, buttons, cards, and
@@ -92,15 +92,14 @@
 </template>
 
 <script setup>
-import { defineStore } from 'pinia';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useApi, useStores } from '@directus/extensions-sdk';
 
 const api = useApi();
 const { useSettingsStore } = useStores();
 const settingsStore = useSettingsStore();
-const useNavBarStore = defineStore('nav-bar-store', {});
-let navBarWasCollapsed;
+let navigationAutoCollapsed = false;
+const pageElement = ref(null);
 const fileInput = ref(null);
 const uploads = ref([]);
 const isDragging = ref(false);
@@ -118,17 +117,22 @@ const dropZoneTitle = computed(() => {
 	return isUploading.value ? 'Uploading your files...' : 'Drop files here';
 });
 
-onMounted(() => {
-	const navBarStore = useNavBarStore();
-	if (typeof navBarStore.collapse !== 'function') return;
+onMounted(async () => {
+	await nextTick();
+	const privateView = pageElement.value?.closest('.private-view');
+	const closeNavigation = privateView?.querySelector('.module-nav .project-info .nav-toggle');
+	if (!(closeNavigation instanceof HTMLElement)) return;
 
-	navBarWasCollapsed = navBarStore.collapsed;
-	navBarStore.collapse();
+	closeNavigation.click();
+	navigationAutoCollapsed = true;
 });
 
 onBeforeUnmount(() => {
-	const navBarStore = useNavBarStore();
-	if (navBarWasCollapsed === false && typeof navBarStore.expand === 'function') navBarStore.expand();
+	if (!navigationAutoCollapsed) return;
+
+	const privateView = pageElement.value?.closest('.private-view');
+	const openNavigation = privateView?.querySelector('.header-bar .nav-toggle');
+	if (openNavigation instanceof HTMLElement) openNavigation.click();
 });
 
 function openFilePicker() {
