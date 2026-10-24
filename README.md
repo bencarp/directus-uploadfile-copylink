@@ -16,7 +16,7 @@ Build the extension with `npm run build`, then place this package in your Direct
 
 ## Download URLs
 
-Links use the Project URL configured in Directus Project Settings and follow the format `{Project URL}/downloads/{id}`. A Project URL must be configured before files can be uploaded through the module.
+Links use the Project URL configured in Directus Project Settings and follow the format `{Project URL}/downloads/{id}`. A Project URL must be configured before files can be uploaded through the module. The project server must be configured to rewrite requests at example.com/downloads/{id} to directus.example.com/assets/{id}.
 
 ## Development
 
